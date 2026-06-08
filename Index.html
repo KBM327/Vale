@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mensaje Nítido y Lento</title>
+    <style>
+        body { margin: 0; background-color: #000; overflow: hidden; font-family: sans-serif; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; }
+        button { 
+            padding: 15px 35px; font-size: 20px; background: #ff2d55; color: white; 
+            border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 0 20px rgba(255,45,85,0.6);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui"><button id="btn">❤️ CLIC AQUÍ</button></div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const btn = document.getElementById('btn');
+
+        let ww = canvas.width = window.innerWidth;
+        let wh = canvas.height = window.innerHeight;
+        let particles = [];
+        const words = ["Mi niña", "Preciosa", "Gracias", "Por existir", "❤️"];
+        let currentWordIndex = 0;
+
+        class Particle {
+            constructor(x, y) {
+                this.x = Math.random() * ww;
+                this.y = Math.random() * wh;
+                this.dest = { x: x, y: y };
+                this.r = Math.random() * 1.8 + 1;
+                this.vx = 0;
+                this.vy = 0;
+                this.accX = 0;
+                this.accY = 0;
+                this.friction = 0.85; // Frena rápido para formar la letra
+                this.color = "#ff2d55";
+            }
+
+            render() {
+                // Aumentamos la fuerza de atracción (el número 500 es la clave)
+                this.accX = (this.dest.x - this.x) / 500; 
+                this.accY = (this.dest.y - this.y) / 500;
+                
+                this.vx += this.accX * 80; // Multiplicador de empuje
+                this.vy += this.accY * 80;
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initScene(text) {
+            ww = canvas.width = window.innerWidth;
+            wh = canvas.height = window.innerHeight;
+            ctx.clearRect(0, 0, ww, wh);
+
+            // Tamaño de letra más grande para que se note
+            let fontSize = Math.min(ww / 5, wh / 3);
+            ctx.font = "bold " + fontSize + "px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(text, ww / 2, wh / 2 + fontSize/4);
+
+            let data = ctx.getImageData(0, 0, ww, wh).data;
+            ctx.clearRect(0, 0, ww, wh);
+
+            particles = [];
+            // Escaneo denso para que la letra se vea sólida
+            for (let i = 0; i < ww; i += 4) {
+                for (let j = 0; j < wh; j += 4) {
+                    if (data[((i + j * ww) * 4) + 3] > 150) {
+                        particles.push(new Particle(i, j));
+                    }
+                }
+            }
+        }
+
+        function render() {
+            requestAnimationFrame(render);
+            ctx.fillStyle = "rgba(0,0,0,0.3)"; // rastro suave
+            ctx.fillRect(0, 0, ww, wh);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].render();
+            }
+        }
+
+        function nextWord() {
+            if (currentWordIndex < words.length) {
+                initScene(words[currentWordIndex]);
+                currentWordIndex++;
+                setTimeout(nextWord, 3000); // 4.5 segundos para que de tiempo de verla bien
+            }
+        }
+
+        btn.addEventListener("click", () => {
+            document.getElementById('ui').style.display = 'none';
+            render();
+            nextWord();
+        });
+    </script>
+</body>
+</html>
